@@ -1,16 +1,21 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#4f46e5">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acil Servis Nöbet Dağıtım Sistemi Pro</title>
     
-    <!-- Excel Çıktısı İçin SheetJS -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+
+    <!-- Web Çıktısı İçin Kütüphaneler -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- PDF Çıktısı İçin html2pdf -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <!-- Mobil Çıktı (APK) İçin Capacitor Eklentileri -->
+    <script src="https://cdn.jsdelivr.net/npm/@capacitor/core@5.0.0/dist/capacitor.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@capacitor/filesystem@5.0.0/dist/plugin.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@capacitor/share@5.0.0/dist/plugin.js"></script>
 
     <style>
         :root {
@@ -22,16 +27,14 @@
             --panel-bg: rgba(255, 255, 255, 0.95);
             --text: #1e293b;
             --border: #cbd5e1;
-            --weekend-bg: #fef08a; /* Varsayılan */
-            --holiday-bg: #fecaca; /* Varsayılan */
+            --weekend-bg: #fef08a;
+            --holiday-bg: #fecaca;
             --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
         }
 
         * { box-sizing: border-box; font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
-        body { 
-            background: var(--bg-gradient); color: var(--text); margin: 0; padding: 30px 20px; min-height: 100vh;
-        }
+        body { background: var(--bg-gradient); color: var(--text); margin: 0; padding: 30px 20px; min-height: 100vh; }
 
         .container { max-width: 1200px; margin: 0 auto; animation: fadeIn 0.6s ease-out; }
         
@@ -94,7 +97,7 @@
         .close-btn:hover { color: #ef4444; background: none; transform: scale(1.1); box-shadow: none;}
 
         .modal-body { padding: 25px; overflow-y: auto; background-color: #ffffff; }
-        .modal-footer { padding: 20px 25px; border-top: 1px solid var(--border); background-color: #f8fafc; display: flex; justify-content: center; gap: 15px; }
+        .modal-footer { padding: 20px 25px; border-top: 1px solid var(--border); background-color: #f8fafc; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
 
         .btn-excel { background-color: var(--excel-color); font-size: 1.05rem; padding: 12px 24px; border-radius: 8px;}
         .btn-excel:hover { background-color: #059669; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
@@ -105,11 +108,8 @@
         th, td { border: 1px solid var(--border); padding: 12px; text-align: left; }
         th { background-color: var(--primary); color: white; font-weight: 600; }
         tr:hover:not(.weekend):not(.holiday) { background-color: #f1f5f9; }
-        
-        /* Dinamik Renkler için CSS Variable Kullanımı */
         .weekend { background-color: var(--weekend-bg) !important; }
         .holiday { background-color: var(--holiday-bg) !important; }
-        
         .stats-box { margin-top: 20px; padding: 15px; border-radius: 8px; font-size: 0.95rem; line-height: 1.6; border: 1px solid var(--border); }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -122,18 +122,17 @@
 <body>
 
 <div class="container">
-    <h1>✨ Acil Servis Nöbet Dağıtım Sistemi</h1>
+    <h1>✨ Acil Servis Nöbet Sistemi</h1>
 
-    <!-- Renk Özelleştirme Alanı -->
     <div class="settings-bar">
         <span style="color:#64748b; font-weight:bold;">🎨 Tablo Renk Ayarları:</span>
         <div class="color-picker">
             <input type="color" id="weekendColor" value="#fef08a" onchange="updateColors()">
-            <label for="weekendColor" style="margin:0; cursor:pointer;">Hafta Sonu Rengi</label>
+            <label for="weekendColor" style="margin:0; cursor:pointer;">Hafta Sonu</label>
         </div>
         <div class="color-picker">
             <input type="color" id="holidayColor" value="#fecaca" onchange="updateColors()">
-            <label for="holidayColor" style="margin:0; cursor:pointer;">Resmi Tatil Rengi</label>
+            <label for="holidayColor" style="margin:0; cursor:pointer;">Resmi Tatil</label>
         </div>
     </div>
 
@@ -145,7 +144,7 @@
             <label>🏖️ Resmi Tatil Günleri (Örn: 1,23,29):</label>
             <input type="text" id="holidays" placeholder="Sadece gün sayılarını virgülle yazın...">
 
-            <button onclick="generateSchedule()" style="margin-top: 15px; padding: 15px; font-size: 1.1rem;">🚀 Listeyi Oluştur ve Önizle</button>
+            <button onclick="generateSchedule()" style="margin-top: 15px; padding: 15px; font-size: 1.1rem;">🚀 Listeyi Oluştur</button>
         </div>
 
         <div class="control-group">
@@ -167,12 +166,11 @@
             </div>
 
             <div class="personnel-list" id="personnelListUI"></div>
-            <button class="clear-btn" onclick="clearData()">🗑️ Tüm Kayıtlı Personeli Temizle</button>
+            <button class="clear-btn" onclick="clearData()">🗑️ Tüm Personeli Temizle</button>
         </div>
     </div>
 </div>
 
-<!-- POP-UP MODAL ALANI -->
 <div class="modal-overlay" id="previewModal">
     <div class="modal-content">
         <div class="modal-header">
@@ -196,8 +194,8 @@
         </div>
 
         <div class="modal-footer">
-            <button class="btn-excel" onclick="exportToExcel()">📊 Excel Olarak İndir</button>
-            <button class="btn-pdf" onclick="exportToPDF()">📄 PDF Olarak İndir</button>
+            <button class="btn-excel" onclick="exportToExcel()">📊 Excel (Kaydet / Paylaş)</button>
+            <button class="btn-pdf" onclick="exportToPDF()">📄 PDF (Kaydet / Paylaş)</button>
         </div>
     </div>
 </div>
@@ -206,23 +204,17 @@
     let personnel = JSON.parse(localStorage.getItem('acilNobetData')) || [];
     let savedColors = JSON.parse(localStorage.getItem('acilNobetColors')) || { weekend: '#fef08a', holiday: '#fecaca' };
     const SHIFT_SIZE = 9;
-    const MAX_EXCUSE_DAYS = 5; // İzin Sınırı
+    const MAX_EXCUSE_DAYS = 5;
 
     document.addEventListener("DOMContentLoaded", () => {
         const trTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Europe/Istanbul"}));
-        const yyyy = trTime.getFullYear();
-        const mm = String(trTime.getMonth() + 1).padStart(2, '0');
-        document.getElementById('monthInput').value = `${yyyy}-${mm}`;
-        
-        // Renkleri Yükle
+        document.getElementById('monthInput').value = `${trTime.getFullYear()}-${String(trTime.getMonth() + 1).padStart(2, '0')}`;
         document.getElementById('weekendColor').value = savedColors.weekend;
         document.getElementById('holidayColor').value = savedColors.holiday;
         applyColors(savedColors.weekend, savedColors.holiday);
-
         updatePersonnelUI();
     });
 
-    // Renk Ayarları Fonksiyonları
     function updateColors() {
         const wColor = document.getElementById('weekendColor').value;
         const hColor = document.getElementById('holidayColor').value;
@@ -230,30 +222,21 @@
         localStorage.setItem('acilNobetColors', JSON.stringify({ weekend: wColor, holiday: hColor }));
     }
     
-    function applyColors(wColor, hColor) {
-        document.documentElement.style.setProperty('--weekend-bg', wColor);
-        document.documentElement.style.setProperty('--holiday-bg', hColor);
-    }
-
-    // Modal
+    function applyColors(w, h) { document.documentElement.style.setProperty('--weekend-bg', w); document.documentElement.style.setProperty('--holiday-bg', h); }
     function openModal() { document.getElementById('previewModal').style.display = 'flex'; }
     function closeModal() { document.getElementById('previewModal').style.display = 'none'; }
-    window.onclick = function(event) { if (event.target === document.getElementById('previewModal')) closeModal(); }
-
+    window.onclick = function(e) { if (e.target === document.getElementById('previewModal')) closeModal(); }
     function saveData() { localStorage.setItem('acilNobetData', JSON.stringify(personnel)); }
 
     function clearData() {
-        if(confirm("Tüm personel ve izin kayıtları silinecek. Emin misiniz?")) {
-            personnel = []; saveData(); updatePersonnelUI();
-        }
+        if(confirm("Tüm personel ve izin kayıtları silinecek. Emin misiniz?")) { personnel = []; saveData(); updatePersonnelUI(); }
     }
 
     function addPerson() {
         const nameInput = document.getElementById('personName');
         const name = nameInput.value.trim();
         if (name && !personnel.find(p => p.name === name)) {
-            personnel.push({ name: name, excuses: {}, shiftCount: 0 });
-            nameInput.value = ''; updatePersonnelUI();
+            personnel.push({ name: name, excuses: {}, shiftCount: 0 }); nameInput.value = ''; updatePersonnelUI();
         } else { alert("Lütfen geçerli ve benzersiz bir isim girin."); }
     }
 
@@ -261,40 +244,24 @@
         const personName = document.getElementById('personSelect').value;
         const day = parseInt(document.getElementById('excuseDay').value);
         const type = document.getElementById('excuseType').value;
-        
         if (!personName || isNaN(day) || day < 1 || day > 31) return alert("Geçerli bir gün girin.");
         
         const person = personnel.find(p => p.name === personName);
         if (person) {
-            // İZİN SINIRI KONTROLÜ (Maksimum 5 Gün)
-            const currentExcusesCount = Object.keys(person.excuses).length;
-            if (currentExcusesCount >= MAX_EXCUSE_DAYS && !person.excuses[day]) {
-                alert(`⚠️ ${person.name} adlı personel için maksimum izin/rapor sınırına (${MAX_EXCUSE_DAYS} gün) ulaşıldı! Daha fazla eklenemez.`);
-                return;
+            if (Object.keys(person.excuses).length >= MAX_EXCUSE_DAYS && !person.excuses[day]) {
+                alert(`⚠️ Maksimum izin sınırına (${MAX_EXCUSE_DAYS} gün) ulaşıldı!`); return;
             }
-
-            person.excuses[day] = type;
-            document.getElementById('excuseDay').value = ''; updatePersonnelUI();
+            person.excuses[day] = type; document.getElementById('excuseDay').value = ''; updatePersonnelUI();
         }
     }
 
     function updatePersonnelUI() {
-        const listUI = document.getElementById('personnelListUI');
-        const select = document.getElementById('personSelect');
+        const listUI = document.getElementById('personnelListUI'); const select = document.getElementById('personSelect');
         listUI.innerHTML = ''; select.innerHTML = '';
-
         personnel.forEach(p => {
-            let option = document.createElement('option');
-            option.value = p.name; option.textContent = p.name; select.appendChild(option);
-
-            let excusesHTML = Object.entries(p.excuses)
-                .map(([day, type]) => `<span class="tag ${type}">${day}.Gün (${type})</span>`).join('');
-
-            listUI.innerHTML += `
-                <div class="person-item">
-                    <span><strong>${p.name}</strong> ${excusesHTML}</span>
-                    <button onclick="removePerson('${p.name}')" style="padding: 4px 8px; font-size: 12px; background: #ef4444; border-radius:4px;">Sil</button>
-                </div>`;
+            let option = document.createElement('option'); option.value = p.name; option.textContent = p.name; select.appendChild(option);
+            let excusesHTML = Object.entries(p.excuses).map(([d, t]) => `<span class="tag ${t}">${d}.Gün (${t})</span>`).join('');
+            listUI.innerHTML += `<div class="person-item"><span><strong>${p.name}</strong> ${excusesHTML}</span><button onclick="removePerson('${p.name}')" style="padding: 4px 8px; font-size: 12px; background: #ef4444; border-radius:4px;">Sil</button></div>`;
         });
         saveData();
     }
@@ -303,78 +270,32 @@
 
     function generateSchedule() {
         const monthInput = document.getElementById('monthInput').value;
-        if (!monthInput) return alert("Yıl ve ay seçimi gerekli.");
-        if (personnel.length < SHIFT_SIZE) return alert(`Listeleme için en az ${SHIFT_SIZE} personel eklemelisiniz.`);
-
-        const [year, month] = monthInput.split('-');
-        const daysInMonth = new Date(year, month, 0).getDate();
+        if (!monthInput || personnel.length < SHIFT_SIZE) return alert("Ay seçimi yapın ve en az 9 personel ekleyin.");
+        const [year, month] = monthInput.split('-'); const daysInMonth = new Date(year, month, 0).getDate();
         const holidays = document.getElementById('holidays').value.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
 
         personnel.forEach(p => p.shiftCount = 0);
-        const tbody = document.getElementById('scheduleBody');
-        tbody.innerHTML = '';
-
+        const tbody = document.getElementById('scheduleBody'); tbody.innerHTML = '';
         document.getElementById('tableTitle').innerText = `${year} Yılı ${month}. Ay Nöbet Listesi`;
 
-        let previousDayStaff = []; // Peş peşe nöbet kontrolü için
-
+        let previousDayStaff = [];
         for (let day = 1; day <= daysInMonth; day++) {
             const currentDate = new Date(year, month - 1, day);
             const dayOfWeek = currentDate.getDay();
             const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
-            const isHoliday = holidays.includes(day);
-
-            let rowClass = isHoliday ? "holiday" : (isWeekend ? "weekend" : "");
-
-            // 1. O gün izinli/raporlu OLMAYANLAR (Müsaitler)
+            let rowClass = holidays.includes(day) ? "holiday" : (isWeekend ? "weekend" : "");
+            
             let availableStaff = personnel.filter(p => !p.excuses[day]);
+            if (availableStaff.length < SHIFT_SIZE) return alert(`${day}. gün için yeterli personel yok!`);
+
+            let idealStaff = availableStaff.filter(p => !previousDayStaff.includes(p.name)).sort(() => Math.random() - 0.5).sort((a, b) => a.shiftCount - b.shiftCount);
+            let nonIdealStaff = availableStaff.filter(p => previousDayStaff.includes(p.name)).sort(() => Math.random() - 0.5).sort((a, b) => a.shiftCount - b.shiftCount);
             
-            if (availableStaff.length < SHIFT_SIZE) {
-                alert(`⚠️ ${day}. gün için müsait yeterli personel yok (${availableStaff.length}/${SHIFT_SIZE}). İzinleri esnetin veya sisteme personel ekleyin.`);
-                return;
-            }
-
-            // 2. PEŞ PEŞE NÖBET ENGELLEME ALGORİTMASI
-            // Dün nöbet tutmayan ideal personelleri ayır
-            let idealStaff = availableStaff.filter(p => !previousDayStaff.includes(p.name));
-            // Dün nöbet tutan ama bugün yine müsait olanları ayır (Zorunlu kalınırsa kullanılacak)
-            let nonIdealStaff = availableStaff.filter(p => previousDayStaff.includes(p.name));
-
-            // Rastgelelik ve Adil Dağıtım - İdeal grubu kendi içinde karıştır ve en az tutanları öne al
-            idealStaff.sort(() => Math.random() - 0.5);
-            idealStaff.sort((a, b) => a.shiftCount - b.shiftCount);
-            
-            nonIdealStaff.sort(() => Math.random() - 0.5);
-            nonIdealStaff.sort((a, b) => a.shiftCount - b.shiftCount);
-
-            let selectedStaff = [];
-
-            // Eğer dün tutmayan kişi sayısı >= 9 ise sorun yok, direkt ilk 9 kişiyi al
-            if (idealStaff.length >= SHIFT_SIZE) {
-                selectedStaff = idealStaff.slice(0, SHIFT_SIZE);
-            } 
-            // Eğer personel yetersizse (örn: ideal havuz 6 kişi), kalan açığı mecburen dün tutanlardan tamamla
-            else {
-                selectedStaff = [...idealStaff]; // Olan tüm idealleri al
-                let needed = SHIFT_SIZE - idealStaff.length; // Kaç kişi eksik?
-                selectedStaff = selectedStaff.concat(nonIdealStaff.slice(0, needed)); // Eksik kadarını non-idealden ekle
-            }
-
-            // Seçilen personellerin nöbet sayısını artır
+            let selectedStaff = idealStaff.length >= SHIFT_SIZE ? idealStaff.slice(0, SHIFT_SIZE) : [...idealStaff, ...nonIdealStaff.slice(0, SHIFT_SIZE - idealStaff.length)];
             selectedStaff.forEach(p => p.shiftCount++);
-            
-            // Dün tutanlar listesini BUGÜN tutanlar olarak güncelle (Bir sonraki döngü/gün için)
             previousDayStaff = selectedStaff.map(p => p.name);
-
-            const dateStr = currentDate.toLocaleDateString('tr-TR', { weekday: 'long' });
             
-            tbody.innerHTML += `
-                <tr class="${rowClass}">
-                    <td><strong>${day}.${month}.${year}</strong></td>
-                    <td>${dateStr}</td>
-                    <td>${selectedStaff.map(p => p.name).join(", ")}</td>
-                </tr>
-            `;
+            tbody.innerHTML += `<tr class="${rowClass}"><td><strong>${day}.${month}.${year}</strong></td><td>${currentDate.toLocaleDateString('tr-TR', { weekday: 'long' })}</td><td>${selectedStaff.map(p => p.name).join(", ")}</td></tr>`;
         }
 
         let statsHTML = "<strong style='color:var(--primary); font-size:1.1rem;'>📊 Aylık Toplam Nöbet Dağılımı:</strong><br><br>";
@@ -382,30 +303,63 @@
             statsHTML += `<span style="display:inline-block; margin-right:15px; margin-bottom:10px; background:#f1f5f9; padding:5px 10px; border-radius:6px; border:1px solid #cbd5e1;">${p.name}: <b style="color:var(--primary);">${p.shiftCount}</b></span>`;
         });
         document.getElementById('statsContainer').innerHTML = statsHTML;
-
         openModal();
+    }
+
+    // NATIVE MOBIL PAYLAŞIM ALGORİTMASI
+    async function saveAndShareNative(base64Data, fileName, mimeType) {
+        try {
+            const { Filesystem, Directory } = capacitorExports;
+            const { Share } = capacitorExports;
+            
+            const savedFile = await Filesystem.writeFile({
+                path: fileName,
+                data: base64Data,
+                directory: Directory.Cache
+            });
+            
+            await Share.share({
+                title: fileName,
+                text: 'Nöbet listesi oluşturuldu. İstediğiniz uygulamaya gönderebilirsiniz.',
+                url: savedFile.uri,
+                dialogTitle: 'Dosyayı Paylaş / Kaydet'
+            });
+        } catch (error) {
+            alert("Paylaşım başlatılırken hata oluştu: " + error.message);
+        }
     }
 
     function exportToExcel() {
         let table = document.getElementById("scheduleTable");
         let wb = XLSX.utils.table_to_book(table, { sheet: "Nöbet Listesi" });
-        const monthInput = document.getElementById('monthInput').value;
-        XLSX.writeFile(wb, `Acil_Nobet_${monthInput}.xlsx`);
+        const fileName = `Acil_Nobet_${document.getElementById('monthInput').value}.xlsx`;
+
+        if (window.Capacitor && window.Capacitor.isNative) {
+            const base64 = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+            saveAndShareNative(base64, fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        } else {
+            XLSX.writeFile(wb, fileName);
+        }
     }
 
     function exportToPDF() {
         const element = document.getElementById('modalPrintArea');
-        const monthInput = document.getElementById('monthInput').value;
+        const fileName = `Acil_Nobet_${document.getElementById('monthInput').value}.pdf`;
         
         const opt = {
-            margin:       10,
-            filename:     `Acil_Nobet_${monthInput}.pdf`,
-            image:        { type: 'jpeg', quality: 1.0 },
-            html2canvas:  { scale: 3, useCORS: true, backgroundColor: '#ffffff' },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            margin: 10, filename: fileName, image: { type: 'jpeg', quality: 1.0 },
+            html2canvas: { scale: 3, useCORS: true, backgroundColor: '#ffffff' },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        html2pdf().set(opt).from(element).save();
+        if (window.Capacitor && window.Capacitor.isNative) {
+            html2pdf().set(opt).from(element).outputPdf('datauristring').then(function(pdfAsString) {
+                const base64 = pdfAsString.split('base64,')[1];
+                saveAndShareNative(base64, fileName, 'application/pdf');
+            });
+        } else {
+            html2pdf().set(opt).from(element).save();
+        }
     }
 </script>
 
