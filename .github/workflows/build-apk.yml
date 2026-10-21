@@ -24,7 +24,7 @@ jobs:
           mkdir www
           cp index.html www/
           cp manifest.json www/
-          cp icon.svg www/
+          cp icon.png www/
 
       - name: Java Kurulumu (Android için)
         uses: actions/setup-java@v4
