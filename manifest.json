@@ -1,6 +1,6 @@
 {
-  "name": "Nöbet Dağıtım Pro",
-  "short_name": "Nöbet",
+  "name": "Aylık Liste",
+  "short_name": "Liste",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#f8fafc",
