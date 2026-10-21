@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acil Servis Nöbet Dağıtım Sistemi Pro</title>
+    <title>Acil Servis Nöbet Sistemi</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4f46e5">
@@ -306,16 +306,17 @@
         openModal();
     }
 
-    // NATIVE MOBIL PAYLAŞIM ALGORİTMASI
+    // NATIVE MOBIL PAYLAŞIM ALGORİTMASI (GÜNCELLENDİ)
     async function saveAndShareNative(base64Data, fileName, mimeType) {
         try {
-            const { Filesystem, Directory } = capacitorExports;
-            const { Share } = capacitorExports;
+            // Capacitor pluginlerine doğru referans
+            const Filesystem = Capacitor.Plugins.Filesystem;
+            const Share = Capacitor.Plugins.Share;
             
             const savedFile = await Filesystem.writeFile({
                 path: fileName,
                 data: base64Data,
-                directory: Directory.Cache
+                directory: 'CACHE' // String olarak düzeltildi
             });
             
             await Share.share({
