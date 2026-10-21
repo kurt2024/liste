@@ -1,0 +1,6 @@
+{
+  "appId": "com.acilnobet.app",
+  "appName": "Nöbet Dağıtım",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
